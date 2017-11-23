@@ -99,7 +99,7 @@ void Game_End(HWND hwnd)
 }
 
 //window event handing function
-LRESULT winProc (HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
+LRESULT WINAPI winProc (HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 {
     switch (msg)
     {
@@ -108,4 +108,55 @@ LRESULT winProc (HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
         break;
     }
     return DefWindowProc(hwnd,msg,wparam,lparam);
+}
+
+int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShow)
+{
+    WNDCLASSEX wc;
+    MSG msg;
+    //set the new window's properties
+    //previously found in the MyRegisterclass function
+    wc.cbSize=sizeof(WNDCLASSEX);
+    wc.lpfnWndProc=(WNDPROC)winProc;
+    wc.style=0; //CS_HREDRAW||CS_VERDRAW;
+    wc.cbClsExtra=0;
+    wc.cbWndExtra=0;
+    wc.hIcon=NULL;
+    wc.hIconSm=NULL;
+    wc.hInstance=hInstance;
+    wc.hCursor=LoadCursor(NULL,IDC_ARROW);
+    wc.hbrBackground=(HBRUSH)GetStockObject(WHITE_BRUSH);
+    wc.lpszClassName="MainWindowClass";
+    if(!RegisterClassEx(&wc))
+        return FALSE;
+    //create a window
+    //previusly found in the initInstance function
+    HWND hwnd=CreateWindow("MainWindowClass",APPTITLE.c_str(),
+                           WS_OVERLAPPEDWINDOW,
+                           CW_USEDEFAULT,CW_USEDEFAULT,
+                           SCREENW,SCREENH,
+                           (HWND)NULL,(HMENU)NULL,
+                           hInstance,
+                           (LPVOID)NULL);
+    //was there an error in the initInstance function
+    if(hwnd==0)
+        return FALSE;
+    //display window
+    ShowWindow(hwnd,nCmdShow);
+    UpdateWindow(hwnd);
+    //initialize game
+    if(!Game_init(hwnd))
+        return 0;
+    //message loop
+    while(!gameover)
+    {
+        if(PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        Game_Run(hwnd);
+    }
+    Game_End(hwnd);
+    return msg.wParam;
 }
