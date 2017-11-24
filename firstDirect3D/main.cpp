@@ -46,6 +46,7 @@ bool Game_init(HWND hwnd)
     //set direct3d present parameters
     D3DPRESENT_PARAMETERS d3dpp;
     ZeroMemory(&d3dpp,sizeof(d3dpp));
+    /*
     d3dpp.Windowed=TRUE;
     d3dpp.SwapEffect=D3DSWAPEFFECT_DISCARD;
     d3dpp.BackBufferFormat=D3DFMT_X8R8G8B8;
@@ -53,6 +54,19 @@ bool Game_init(HWND hwnd)
     d3dpp.BackBufferHeight=SCREENH;
     d3dpp.BackBufferWidth=SCREENW;
     d3dpp.hDeviceWindow=hwnd;
+    */
+    //全屏模式Direct3D 第二步改动更改direct3d参数
+
+    D3DDISPLAYMODE dm;
+    d3d->GetAdapterDisplayMode(D3DADAPTER_DEFAULT,&dm);
+    d3dpp.hDeviceWindow=hwnd;
+    d3dpp.Windowed=FALSE;
+    d3dpp.SwapEffect=D3DSWAPEFFECT_DISCARD;
+    d3dpp.BackBufferFormat=dm.Format;
+    d3dpp.BackBufferCount=1;
+    d3dpp.BackBufferHeight=dm.Height;
+    d3dpp.BackBufferWidth=dm.Width;
+
     //create direct3d device;
     d3d->CreateDevice(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,hwnd,D3DCREATE_SOFTWARE_VERTEXPROCESSING,&d3dpp,&d3ddev);
     if(d3ddev=NULL)
@@ -105,6 +119,7 @@ LRESULT WINAPI winProc (HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
     {
     case WM_DESTROY:
         gameover=TRUE;
+        //PostQuitMessage(0);
         break;
     }
     return DefWindowProc(hwnd,msg,wparam,lparam);
@@ -131,6 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
         return FALSE;
     //create a window
     //previusly found in the initInstance function
+    /*
     HWND hwnd=CreateWindow("MainWindowClass",APPTITLE.c_str(),
                            WS_OVERLAPPEDWINDOW,
                            CW_USEDEFAULT,CW_USEDEFAULT,
@@ -138,6 +154,15 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
                            (HWND)NULL,(HMENU)NULL,
                            hInstance,
                            (LPVOID)NULL);
+    */
+    //全屏模式Direct3D 第一步改动CreateWindows
+
+    HWND hwnd=CreateWindow("MainWindowClass",APPTITLE.c_str(),
+                           WS_EX_TOPMOST|WS_POPUP,0,0,
+                           640,480,                          //此处在初始化direct3d会查看显示设置使用屏幕分辨率
+                           (HWND)NULL,(HMENU)NULL,
+                           hInstance,(LPVOID)NULL);
+
     //was there an error in the initInstance function
     if(hwnd==0)
         return FALSE;
