@@ -27,13 +27,13 @@ d3ddev->GetBackBuff(0,0,D3DBACKBUFFER_TYPE_MONO,&backbuffer);
 #include<d3d9.h>
 #include<time.h>
 #include<iostream>
-use namespace std;
+using namespace std;
 #pragma comment(lib,"d3d9.lib");
 #pragma comment(lin,"d3d9x.lib");
 //application title
 const string APPTITLE="Create Surface Program";
 //macro to read the keyboard
-#define KEY_DOWN(vk_code) (GetAsynKeyState(vk_code)&0x8000?1:0)
+#define KEY_DOWN(vk_code) (GetAsyncKeyState(vk_code)&0x8000?1:0)
 //screen resolution
 #define SCREENH 1024
 #define SCREENW 768
@@ -44,7 +44,7 @@ LPDIRECT3DSURFACE9 backbuffer=NULL;
 LPDIRECT3DSURFACE9 surface=NULL;
 bool gameover=false;
 //Game initialization function
-bool Game_init(Hwnd hwnd)
+bool Game_init(HWND hwnd)
 {
     //initialize Direct3D
     d3d=Direct3DCreate9(D3D_SDK_VERSION);
@@ -67,7 +67,7 @@ bool Game_init(Hwnd hwnd)
                       &d3dpp,&d3ddev);
     if(!d3ddev)
     {
-        MessageBox(hwnd,"Error initializing Direct3D Device","Error",MB_OK));
+        MessageBox(hwnd,"Error initializing Direct3D Device","Error",MB_OK);
         return false;
     }
     //set Rabdom number seed
@@ -105,15 +105,16 @@ void Game_Run(HWND hwnd)
         d3ddev->ColorFill(surface,NULL,D3DCOLOR_XRGB(r,g,b));
         //copy the surface to the backbuffer
         RECT rect;
-        rect.left=rand()%SCREENW&/2;
-        rect.right=rand.left+rand()%SCREENW/2;
+        rect.left=rand()%SCREENW/2;
+        rect.right=rect.left+rand()%SCREENW/2;
         rect.top=rand()%SCREENH;
         rect.bottom=rand()%SCREENH/2+rect.top;
+        //d3ddev->Clear(0,NULL,D3DCLEAR_TARGET,D3DCOLOR_XRGB(0,0,0),1.0f,0);
         d3ddev->StretchRect(surface,NULL,backbuffer,&rect,D3DTEXF_NONE);
         //stop rendering
         d3ddev->EndScene();
         //copy the back buffer to the present
-        d3ddev->Present(NULL,NULL,,NULL,NULL);
+        d3ddev->Present(NULL,NULL,NULL,NULL);
     }
     //check for escape key (to exit)
     if(KEY_DOWN(VK_ESCAPE))
@@ -132,7 +133,7 @@ void Game_End(HWND hwnd)
         d3d->Release();
 }
 //window event call back function
-LRESULT WINAPI Win_Proc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
+LRESULT WINAPI WinProc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 {
     switch(msg)
     {
@@ -149,5 +150,44 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPreIstance,LPSTR lpCmdLine,int
     //create the window class structure
     WNDCLASSEX wc;
     wc.cbSize=sizeof(wc);
+    wc.style=CS_HREDRAW|CS_VREDRAW;
+    wc.lpfnWndProc=(WNDPROC)WinProc;
+    wc.cbClsExtra=0;
+    wc.cbWndExtra=0;
+    wc.hInstance=hInstance;
+    wc.hIcon=NULL;
+    wc.hCursor=LoadCursor(NULL,IDC_ARROW);
+    wc.hbrBackground=(HBRUSH)GetStockObject(WHITE_BRUSH);
+    wc.lpszMenuName=NULL;
+    wc.lpszClassName="MainWindowClass";
+    wc.hIconSm=NULL;
+    RegisterClassEx(&wc);
+    //create a new window
+    HWND window=CreateWindow("MainWindowClass",APPTITLE.c_str(),
+                 WS_OVERLAPPEDWINDOW,CW_USEDEFAULT,CW_USEDEFAULT,
+                 SCREENW,SCREENH,
+                 NULL,NULL,
+                 hInstance,NULL);
+    //was there an error creating the window
+    if(window==0)
+        return 0;
+    //display the window
+    ShowWindow(window,nCmdShow);
+    UpdateWindow(window);
+    //initialize the game
+    if(!Game_init(window))
+        return 0;
+    MSG message;
+    while(!gameover)
+    {
+        if(PeekMessage(&message,NULL,0,0,PM_REMOVE))
+        {
+            TranslateMessage(&message);
+            DispatchMessage(&message);
+        }
+        Game_Run(window);
+    }
+    Game_End(window);
+    return message.wParam;
 }
 
